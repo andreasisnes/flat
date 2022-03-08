@@ -1,4 +1,4 @@
-module github.com/andreasisnes/go-flat
+module github.com/andreasisnes/goflat
 
 go 1.17
 
