@@ -4,30 +4,38 @@ import (
 	"fmt"
 )
 
-func List(value []interface{}, options *Options) (map[string]interface{}, error) {
+// This function takes a list and flattens it by assigning each leaf value to a unique
+// concatenated key that represents the value's path. A delimiter always gets in between
+// keys that get concatenated. If the options parameter is nil or delimiter is an empty
+// string this method will use the default delimiter ".".
+func List(value []interface{}, options *Options) map[string]interface{} {
+	if value == nil {
+		return nil
+	}
+
 	return flatwrapper(value, options)
 }
 
-func Map(value map[string]interface{}, options *Options) (map[string]interface{}, error) {
+// This function takes a map and flattens it by assigning each leaf value to a unique
+// concatenated key that represents the value's path. A delimiter always gets in between
+// keys that get concatenated. If the options parameter is nil or delimiter is an empty
+// string this method will use the default delimiter ".".
+func Map(value map[string]interface{}, options *Options) map[string]interface{} {
+	if value == nil {
+		return nil
+	}
+
 	return flatwrapper(value, options)
 }
 
-func flatwrapper(unflat interface{}, options *Options) (map[string]interface{}, error) {
+func flatwrapper(unflat interface{}, options *Options) map[string]interface{} {
 	result := make(map[string]interface{})
-	if options == nil {
-		options = &Options{
-			Delimiter: DefaultDelimiter,
-		}
-	}
-
-	if options.Delimiter == "" {
-		return result, ErrEmptyDelimiter
-	}
+	options = createDefultOptionsIfNil(options)
 
 	return flat(unflat, result, "", options)
 }
 
-func flat(curr interface{}, result map[string]interface{}, key string, options *Options) (map[string]interface{}, error) {
+func flat(curr interface{}, result map[string]interface{}, key string, options *Options) map[string]interface{} {
 	switch m := curr.(type) {
 	case []interface{}:
 		for idx, value := range m {
@@ -41,7 +49,7 @@ func flat(curr interface{}, result map[string]interface{}, key string, options *
 		result[key] = curr
 	}
 
-	return result, nil
+	return result
 }
 
 func concatKey(key, idx string, options *Options) string {
