@@ -1,69 +1,57 @@
 package goflat
 
 import (
-	"errors"
-	"fmt"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 )
 
-var (
-	ErrEmptyDelimiter = errors.New("delimiter can't be an empty string")
-)
+// UList takes a flattened list and recreates it with nested objects and lists.
+// Remember to use the same delimiter when you first flattened it.
+// If the options parameter is nil or delimiter is an empty string this method will use the default delimiter ".".
+func UList(flatmap map[string]interface{}, options *Options) []interface{} {
+	if flatmap == nil {
+		return nil
+	}
+	options = createDefultOptionsIfNil(options)
 
-func UList(flatmap map[string]interface{}, options *Options) ([]interface{}, error) {
 	wrapper := make(map[string]interface{})
+
 	for key, value := range flatmap {
-		wrapper[concatKey("wrapper", key, &Options{
-			Delimiter: ".",
-		})] = value
+		wrapper[concatKey("wrapper", key, options)] = value
 	}
 
-	if result, err := UMap(wrapper, options); err == nil {
-		return result["wrapper"].([]interface{}), nil
-	} else {
-		return nil, err
-	}
+	return UMap(wrapper, options)["wrapper"].([]interface{})
 }
 
-func UMap(flatmap map[string]interface{}, options *Options) (result map[string]interface{}, err error) {
-	value, err := unflatWrapper(flatmap, make(map[string]interface{}), options)
-	if result, ok := value.(map[string]interface{}); ok {
-		return result, err
+// UMap takes a flattened map and recreates it with nested objects and lists.
+// Remember to use the same delimiter when you first flattened it.
+// If the options parameter is nil or delimiter is an empty string this method will use the default delimiter ".".
+func UMap(flatmap map[string]interface{}, options *Options) map[string]interface{} {
+	if flatmap == nil {
+		return nil
 	}
 
-	return nil, err
+	options = createDefultOptionsIfNil(options)
+	value := unflatWrapper(flatmap, make(map[string]interface{}), options)
+	return value.(map[string]interface{})
 }
 
-func unflatWrapper(flat map[string]interface{}, result interface{}, options *Options) (interface{}, error) {
-	if options == nil {
-		options = &Options{
-			Delimiter: DefaultDelimiter,
-		}
-	}
-
-	if options.Delimiter == "" {
-		return result, ErrEmptyDelimiter
-	}
-
+func unflatWrapper(flat map[string]interface{}, result interface{}, options *Options) interface{} {
 	keyArrays := sortKeys(flat, options)
 	for keyArrayIdx, keyArray := range keyArrays {
 		unflat(keyArrays, result, flat[strings.Join(keyArray, options.Delimiter)], keyArray, keyArrayIdx, 0)
 	}
 
-	return result, nil
+	return result
 }
 
 func unflat(keyArrays [][]string, currValue interface{}, value interface{}, path []string, keyArrayIdx, depth int) interface{} {
 	switch m := currValue.(type) {
 	case []interface{}:
 		return unflatList(keyArrays, m, value, path, keyArrayIdx, depth)
-	case map[string]interface{}:
-		return unflatObject(keyArrays, m, value, path, keyArrayIdx, depth)
 	default:
-		panic(fmt.Sprintf("can't parse child of type: %s.", reflect.TypeOf(m).Name()))
+		return unflatObject(keyArrays, m.(map[string]interface{}), value, path, keyArrayIdx, depth)
 	}
 }
 
@@ -110,9 +98,6 @@ func unflatObject(keyArrays [][]string, currValue map[string]interface{}, value 
 }
 
 func isList(keyArrays [][]string, currKey []string, keyArrayIdx, depth int) bool {
-	if depth >= len(currKey) {
-		return false
-	}
 	if _, err := strconv.Atoi(currKey[depth]); err != nil {
 		return false
 	}
