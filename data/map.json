@@ -1,0 +1,37 @@
+{
+    "Field": "MapSingleField",
+    "Nested": {
+        "Nested": {
+            "Field": "MapNestedField",
+            "AntotherField": "AnotherValue"
+        },
+        "EmptyObject": {
+
+        }
+    },
+    "List": [
+        "0",
+        "1",
+        "2"
+    ],
+    "ListVariousTypes": [
+        "0",
+        1,
+        2.2,
+        false
+    ],
+    "NestedList": [
+        [
+            "0"
+        ],
+        [
+            "0",
+            "1"
+        ],
+        [
+            "0",
+            "1",
+            "2"
+        ]
+    ]
+}
