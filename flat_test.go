@@ -37,6 +37,44 @@ func readfile(dataset string, result interface{}) interface{} {
 	return result
 }
 
+type testStructOuter struct {
+	Nested *testStructInner
+}
+
+type testStructInner struct {
+	FieldChan    chan string
+	FieldPointer *string
+	Field        string
+}
+
+func TestListWithCustomValues(t *testing.T) {
+	innerString := "TestPointer"
+	outerString := &innerString
+	c := make(chan string)
+	value := []interface{}{
+		[]int{1, 2, 3, 4, 5},
+		[]int{2, 3, 4},
+		testStructOuter{
+			Nested: &testStructInner{
+				FieldChan:    c,
+				FieldPointer: outerString,
+				Field:        "Test",
+			},
+		},
+	}
+
+	result := List(value, nil)
+
+	assert.Equal(t, c, result["2.Nested.FieldChan"])
+	assert.Equal(t, outerString, result["2.Nested.FieldPointer"])
+	assert.Equal(t, "Test", result["2.Nested.Field"])
+
+	assert.Equal(t, 1, result["0.0"])
+	assert.Equal(t, 5, result["0.4"])
+	assert.Equal(t, 2, result["1.0"])
+	assert.Equal(t, 4, result["1.2"])
+}
+
 func TestMapWithNil(t *testing.T) {
 	result := Map(nil, &Options{})
 	assert.Nil(t, result)
