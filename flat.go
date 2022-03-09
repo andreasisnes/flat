@@ -5,23 +5,11 @@ import (
 	"reflect"
 )
 
-// This function takes a list and flattens it by assigning each leaf value to a unique
-// concatenated key that represents the value's path. A delimiter always gets in between
-// keys that get concatenated. If the options parameter is nil or delimiter is an empty
-// string this method will use the default delimiter ".".
-func List(value []interface{}, options *Options) map[string]interface{} {
-	if value == nil {
-		return nil
-	}
-
-	return flatwrapper(value, options)
-}
-
 // This function takes a map and flattens it by assigning each leaf value to a unique
 // concatenated key that represents the value's path. A delimiter always gets in between
 // keys that get concatenated. If the options parameter is nil or delimiter is an empty
 // string this method will use the default delimiter ".".
-func Map(value map[string]interface{}, options *Options) map[string]interface{} {
+func Map(value interface{}, options *Options) map[string]interface{} {
 	if value == nil {
 		return nil
 	}
@@ -59,16 +47,10 @@ func flat(curr interface{}, result map[string]interface{}, key string, options *
 			flat(rValue.MapIndex(rKey).Interface(), result, concatKey(key, fmt.Sprintf("%v", rKey.Interface()), options), options)
 		}
 	default:
-		result[key] = curr
+		if key != "" {
+			result[getFold(key, options)] = curr
+		}
 	}
 
 	return result
-}
-
-func concatKey(key, idx string, options *Options) string {
-	if key == "" {
-		return idx
-	}
-
-	return fmt.Sprintf("%s%s%s", key, options.Delimiter, idx)
 }

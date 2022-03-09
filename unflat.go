@@ -6,39 +6,30 @@ import (
 	"strings"
 )
 
-// UList takes a flattened list and recreates it with nested objects and lists.
-// Remember to use the same delimiter when you first flattened it.
-// If the options parameter is nil or delimiter is an empty string this method will use the default delimiter ".".
-func UList(flatmap map[string]interface{}, options *Options) []interface{} {
-	if flatmap == nil {
-		return nil
-	}
-	options = createDefultOptionsIfNil(options)
-
-	wrapper := make(map[string]interface{})
-
-	for key, value := range flatmap {
-		wrapper[concatKey("wrapper", key, options)] = value
-	}
-
-	return UMap(wrapper, options)["wrapper"].([]interface{})
-}
-
 // UMap takes a flattened map and recreates it with nested objects and lists.
 // Remember to use the same delimiter when you first flattened it.
 // If the options parameter is nil or delimiter is an empty string this method will use the default delimiter ".".
-func UMap(flatmap map[string]interface{}, options *Options) map[string]interface{} {
-	if flatmap == nil {
+func UMap(flatmap map[string]interface{}, options *Options) interface{} {
+	if len(flatmap) == 0 {
 		return nil
 	}
 
 	options = createDefultOptionsIfNil(options)
-	value := unflatWrapper(flatmap, make(map[string]interface{}), options)
-	return value.(map[string]interface{})
+	keyArrays := sortKeys(flatmap, options)
+	if isList(keyArrays, keyArrays[0], 0, 0) {
+		wrapper := make(map[string]interface{})
+
+		for key, value := range flatmap {
+			wrapper[concatKey("wrapper", key, options)] = value
+		}
+
+		return unflatWrapper(wrapper, make(map[string]interface{}), sortKeys(wrapper, options), options).(map[string]interface{})["wrapper"]
+	}
+
+	return unflatWrapper(flatmap, make(map[string]interface{}), keyArrays, options)
 }
 
-func unflatWrapper(flat map[string]interface{}, result interface{}, options *Options) interface{} {
-	keyArrays := sortKeys(flat, options)
+func unflatWrapper(flat map[string]interface{}, result interface{}, keyArrays [][]string, options *Options) interface{} {
 	for keyArrayIdx, keyArray := range keyArrays {
 		unflat(keyArrays, result, flat[strings.Join(keyArray, options.Delimiter)], keyArray, keyArrayIdx, 0)
 	}

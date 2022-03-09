@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"os"
 	"path"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -47,6 +46,21 @@ type testStructInner struct {
 	Field        string
 }
 
+func TestFlatWithUnestedValues(t *testing.T) {
+	res := Map(5, nil)
+	assert.Len(t, res, 0)
+
+	pValue := 5
+	res = Map(&pValue, nil)
+	assert.Len(t, res, 0)
+
+	res = Map("test", nil)
+	assert.Len(t, res, 0)
+
+	res = Map(false, nil)
+	assert.Len(t, res, 0)
+}
+
 func TestListWithCustomValues(t *testing.T) {
 	innerString := "TestPointer"
 	outerString := &innerString
@@ -63,7 +77,7 @@ func TestListWithCustomValues(t *testing.T) {
 		},
 	}
 
-	result := List(value, nil)
+	result := Map(value, nil)
 
 	assert.Equal(t, c, result["2.Nested.FieldChan"])
 	assert.Equal(t, outerString, result["2.Nested.FieldPointer"])
@@ -81,20 +95,23 @@ func TestMapWithNil(t *testing.T) {
 }
 
 func TestListWithNil(t *testing.T) {
-	result := List(nil, &Options{})
+	result := Map(nil, &Options{})
 	assert.Nil(t, result)
 }
 
 func TestMapWithDifferentDelimiter(t *testing.T) {
-	data := Map(readMap(datasetMap), &Options{
+	result := Map(readMap(datasetMap), &Options{
 		Delimiter: "<>",
 	})
 
-	for key := range data {
-		if strings.HasSuffix(key, "NestedList") {
-			assert.Contains(t, key, "<>")
-		}
-	}
+	assert.Equal(t, "MapNestedField", result["Nested<>Nested<>Field"])
+}
+
+func TestMapWithUpperCaseFolding(t *testing.T) {
+	result := Map(readMap(datasetMap), &Options{
+		Fold: UpperCaseFold,
+	})
+	assert.Equal(t, "MapSingleField", result["FIELD"])
 }
 
 func TestMapWithEmptyDelimiter(t *testing.T) {
@@ -103,7 +120,7 @@ func TestMapWithEmptyDelimiter(t *testing.T) {
 }
 
 func TestListWithEmptyDelimiter(t *testing.T) {
-	result := List(readList(datasetList), &Options{})
+	result := Map(readList(datasetList), &Options{})
 	assert.Equal(t, "0", result["0.0"])
 }
 
@@ -156,7 +173,7 @@ func TestFlatMapNestedList(t *testing.T) {
 func TestFlatListNestedListsWithObjects(t *testing.T) {
 	data := readList(datasetList)
 
-	result := List(data, nil)
+	result := Map(data, nil)
 
 	assert.Equal(t, 0, int(result["2.List.0"].(float64)))
 	assert.Equal(t, false, result["2.List.1"])
@@ -167,7 +184,7 @@ func TestFlatListNestedListsWithObjects(t *testing.T) {
 func TestFlatListNestedObjects(t *testing.T) {
 	data := readList(datasetList)
 
-	result := List(data, nil)
+	result := Map(data, nil)
 
 	assert.Equal(t, "Value", result["2.Field"])
 	assert.Equal(t, "Value", result["2.Nested.Nested.Field"])
@@ -176,7 +193,7 @@ func TestFlatListNestedObjects(t *testing.T) {
 func TestFlatListNestedLists(t *testing.T) {
 	data := readList(datasetList)
 
-	result := List(data, nil)
+	result := Map(data, nil)
 
 	assert.Equal(t, "0", result["0.0"])
 	assert.Equal(t, "0", result["1.0"])
