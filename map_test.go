@@ -1,33 +1,35 @@
-package goflat
+package flat
 
 import (
 	"encoding/json"
 	"os"
 	"path"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 const (
-	datasetMap  = "map.json"
-	datasetList = "list.json"
-	datasetDir  = "data"
+	datasetMap    = "map.json"
+	datasetList   = "list.json"
+	datasetRandom = "random.json"
+	datasetDir    = "data"
 )
 
-func readMap(dataset string) map[string]interface{} {
-	return readfile(dataset, make(map[string]interface{})).(map[string]interface{})
+func readMap(dataset string) map[string]any {
+	return readfile(dataset, make(map[string]any)).(map[string]any)
 }
 
-func readList(dataset string) []interface{} {
-	return readfile(dataset, make([]interface{}, 0)).([]interface{})
+func readList(dataset string) []any {
+	return readfile(dataset, make([]any, 0)).([]any)
 }
 
-func readfile(dataset string, result interface{}) interface{} {
+func readfile(dataset string, result any) any {
 	if content, err := os.ReadFile(path.Join(datasetDir, dataset)); err != nil {
 		panic(err)
 	} else {
-		result = make(map[string]interface{})
+		result = make(map[string]any)
 		if err = json.Unmarshal(content, &result); err != nil {
 			panic(err)
 		}
@@ -47,17 +49,17 @@ type testStructInner struct {
 }
 
 func TestFlatWithUnestedValues(t *testing.T) {
-	res := Map(5, nil)
+	res := Map(5)
 	assert.Len(t, res, 0)
 
 	pValue := 5
-	res = Map(&pValue, nil)
+	res = Map(&pValue)
 	assert.Len(t, res, 0)
 
-	res = Map("test", nil)
+	res = Map("test")
 	assert.Len(t, res, 0)
 
-	res = Map(false, nil)
+	res = Map(false)
 	assert.Len(t, res, 0)
 }
 
@@ -65,7 +67,7 @@ func TestListWithCustomValues(t *testing.T) {
 	innerString := "TestPointer"
 	outerString := &innerString
 	c := make(chan string)
-	value := []interface{}{
+	value := []any{
 		[]int{1, 2, 3, 4, 5},
 		[]int{2, 3, 4},
 		testStructOuter{
@@ -77,7 +79,7 @@ func TestListWithCustomValues(t *testing.T) {
 		},
 	}
 
-	result := Map(value, nil)
+	result := Map(value)
 
 	assert.Equal(t, c, result["2.Nested.FieldChan"])
 	assert.Equal(t, outerString, result["2.Nested.FieldPointer"])
@@ -90,37 +92,38 @@ func TestListWithCustomValues(t *testing.T) {
 }
 
 func TestMapWithNil(t *testing.T) {
-	result := Map(nil, &Options{})
+	result := Map(nil)
 	assert.Nil(t, result)
 }
 
 func TestListWithNil(t *testing.T) {
-	result := Map(nil, &Options{})
+	result := Map(nil)
 	assert.Nil(t, result)
 }
 
 func TestMapWithDifferentDelimiter(t *testing.T) {
-	result := Map(readMap(datasetMap), &Options{
-		Delimiter: "<>",
+	result := Map(readMap(datasetMap), func(options *Options) {
+		options.Delimiter = "<>"
 	})
 
 	assert.Equal(t, "MapNestedField", result["Nested<>Nested<>Field"])
 }
 
 func TestMapWithUpperCaseFolding(t *testing.T) {
-	result := Map(readMap(datasetMap), &Options{
-		Fold: UpperCaseFold,
+	result := Map(readMap(datasetMap), func(options *Options) {
+		options.Fold = strings.ToUpper
 	})
+
 	assert.Equal(t, "MapSingleField", result["FIELD"])
 }
 
 func TestMapWithEmptyDelimiter(t *testing.T) {
-	result := Map(readMap(datasetMap), &Options{})
+	result := Map(readMap(datasetMap))
 	assert.Equal(t, "MapSingleField", result["Field"])
 }
 
 func TestListWithEmptyDelimiter(t *testing.T) {
-	result := Map(readList(datasetList), &Options{})
+	result := Map(readList(datasetList))
 	assert.Equal(t, "0", result["0.0"])
 }
 
@@ -198,4 +201,12 @@ func TestFlatListNestedLists(t *testing.T) {
 	assert.Equal(t, "0", result["0.0"])
 	assert.Equal(t, "0", result["1.0"])
 	assert.Equal(t, "1", result["1.1"])
+}
+
+func TestRandomJsonData(t *testing.T) {
+	data := readList(datasetRandom)
+	result := Map(data, nil)
+
+	assert.Equal(t, result["0.id"], "0001")
+	assert.Equal(t, result["0.batters.batter.2.id"], "1003")
 }
