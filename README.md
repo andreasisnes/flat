@@ -1,3 +1,13 @@
+<div align="center">
+
+[![Pipeline](https://github.com/andreasisnes/flat/actions/workflows/pipeline.yml/badge.svg)](https://github.com/andreasisnes/flat/actions/workflows/pipeline.yml)
+![coverage](https://raw.githubusercontent.com/andreasisnes/flat/badges/.badges/main/coverage.svg)
+![GitHub](https://img.shields.io/github/license/andreasisnes/flat)
+[![Go Report Card](https://goreportcard.com/badge/github.com/andreasisnes/flat)](https://goreportcard.com/report/github.com/andreasisnes/flat)
+[![GoDoc](https://godoc.org/github.com/andreasisnes/flat?status.svg)](https://godoc.org/github.com/andreasisnes/flat)
+
+</div>
+
 # Flat - Go Package for Flattening and Unflattening Complex Structures
 
 FlatMapper is a Go package that provides functions for flattening and unflattening complex structures, allowing you to easily transform nested objects and lists into a flat map, and vice versa.
