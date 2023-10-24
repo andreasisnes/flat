@@ -4,7 +4,7 @@ FlatMapper is a Go package that provides functions for flattening and unflatteni
 
 ## Installation
 ```bash
-go get github.com/andreasisnes/go-flat
+go get github.com/andreasisnes/flat
 ```
 
 ## Usage
@@ -16,7 +16,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/andreasisnes/go-flat"
+	"github.com/andreasisnes/flat"
 )
 
 type Person struct {
